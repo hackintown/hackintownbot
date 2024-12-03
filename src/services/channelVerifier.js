@@ -1,9 +1,9 @@
 const axios = require("axios");
 
-const verifyUserInChannel = async (bot, channelUsername, userId) => {
+const verifyUserInChannel = async (telegram, channelUsername, userId) => {
   try {
-    const member = await bot.telegram.getChatMember(channelUsername, userId);
-    return member.status === "member" || member.status === "administrator";
+    const member = await telegram.getChatMember(channelUsername, userId);
+    return ["member", "administrator", "creator"].includes(member.status);
   } catch (error) {
     console.error("Verification Error:", error);
     return false;

@@ -7,13 +7,9 @@ const app = express();
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, "../public")));
 
-// Bot webhook callback
-app.use(bot.webhookCallback(`/bot${process.env.BOT_TOKEN}`));
-
-// Set webhook
-bot.telegram.setWebhook(
-  `${process.env.WEBHOOK_URL}/bot${process.env.BOT_TOKEN}`
-);
+// Comment out webhook related code for local testing
+// app.use(bot.webhookCallback(`/bot${process.env.BOT_TOKEN}`));
+// bot.telegram.setWebhook(`${process.env.WEBHOOK_URL}/bot${process.env.BOT_TOKEN}`);
 
 // Serve index.html for the root route
 app.get("/", (req, res) => {

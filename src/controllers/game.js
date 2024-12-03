@@ -1,49 +1,60 @@
-const {
-  spinWheel,
-  checkWithdrawEligibility,
-} = require("../services/spinWheel");
 const User = require("../models/User");
+const { spinWheel } = require("../services/spinWheel");
+const { Markup } = require("telegraf");
 
-const spinGame = async (ctx) => {
-  const userId = ctx.from.id;
-  const user = await User.findOne({ telegramId: userId });
+const handleSpinGame = async (ctx) => {
+  try {
+    const userId = ctx.from.id;
+    const user = await User.findOne({ telegramId: userId });
 
-  if (!user.joinedChannel) {
-    return ctx.reply("Please join our channel first!");
-  }
-
-  if (user.spinsLeft > 0) {
-    const spinResult = spinWheel();
-    user.spinsLeft -= 1;
-    user.totalEarnings += spinResult;
-
-    // Check withdrawal eligibility
-    if (checkWithdrawEligibility(user.totalEarnings)) {
-      user.canWithdraw = true;
+    if (!user || !user.joinedChannel) {
+      return ctx.reply(
+        "Please join our channel first!",
+        Markup.inlineKeyboard([
+          Markup.button.url("Join Channel", "https://t.me/hackintown"),
+        ])
+      );
     }
 
+    if (user.spinsLeft <= 0) {
+      const referralLink = `https://t.me/HackintownBot?start=${user.telegramId}`;
+      return ctx.reply(
+        `No spins left! 😔\n\n💰 Invite friends to earn ₹10 per referral!\n\nYour referral link:\n${referralLink}`
+      );
+    }
+
+    const winAmount = spinWheel();
+    user.spinsLeft -= 1;
+    user.totalEarnings += winAmount;
     await user.save();
 
+    let message = `🎉 You won ₹${winAmount}!\n\n`;
+    message += `💰 Total earnings: ₹${user.totalEarnings}\n`;
+    message += `🎲 Spins left: ${user.spinsLeft}`;
+
+    const buttons = [];
+    if (user.totalEarnings >= 100) {
+      buttons.push([Markup.button.callback("💸 Withdraw ₹100", "WITHDRAW")]);
+    }
+    if (user.spinsLeft > 0) {
+      buttons.push([Markup.button.callback("🎲 Spin Again", "SPIN_WHEEL")]);
+    }
+
     await ctx.reply(
-      `🎉 You won ₹${spinResult}!\n\nTotal earnings: ₹${user.totalEarnings}\nSpins left: ${user.spinsLeft}`,
-      user.canWithdraw
-        ? Markup.inlineKeyboard([
-            Markup.button.callback("💰 Withdraw", "WITHDRAW"),
-          ])
-        : null
+      message,
+      buttons.length > 0 ? Markup.inlineKeyboard(buttons) : null
     );
 
     if (user.spinsLeft === 0) {
-      const referralLink = `https://t.me/${ctx.botInfo.username}?start=${user.referralCode}`;
+      const referralLink = `https://t.me/HackintownBot?start=${user.telegramId}`;
       await ctx.reply(
-        `You're out of spins! Invite friends to earn ₹10 per referral!\n\nYour referral link: ${referralLink}`
+        `🎮 Game Over!\n\n💰 Invite friends to earn ₹10 per referral!\n\nYour referral link:\n${referralLink}`
       );
     }
-  } else {
-    await ctx.reply(
-      "No spins left! Invite friends to earn ₹10 per referral and get more spins!"
-    );
+  } catch (error) {
+    console.error("Spin game error:", error);
+    await ctx.reply("An error occurred during the game. Please try again.");
   }
 };
 
-module.exports = { spinGame };
+module.exports = { handleSpinGame };
