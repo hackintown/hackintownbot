@@ -1,20 +1,42 @@
 const User = require("../models/User");
 const { verifyUserInChannel } = require("../services/channelVerifier");
+const crypto = require("crypto");
 
 const startBot = async (ctx) => {
   const telegramId = ctx.from.id;
   const username = ctx.from.username;
+  const referralCode = ctx.message.text.split(" ")[1];
 
   let user = await User.findOne({ telegramId });
+
   if (!user) {
-    user = new User({ telegramId, username });
+    // Generate unique referral code
+    const newReferralCode = crypto.randomBytes(4).toString("hex");
+
+    user = new User({
+      telegramId,
+      username,
+      referralCode: newReferralCode,
+      referredBy: referralCode,
+    });
+
+    // Handle referral reward
+    if (referralCode) {
+      const referrer = await User.findOne({ referralCode });
+      if (referrer) {
+        referrer.totalEarnings += 10;
+        referrer.referrals += 1;
+        await referrer.save();
+      }
+    }
+
     await user.save();
   }
 
   await ctx.reply(
     "Welcome to Spin and Win! Click the button to play.",
     Markup.inlineKeyboard([
-      Markup.button.callback("Start Playing", "START_PLAYING"),
+      Markup.button.callback("🎮 Start Playing", "START_PLAYING"),
     ])
   );
 };

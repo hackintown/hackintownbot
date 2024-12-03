@@ -1,9 +1,11 @@
 const spinWheel = () => {
-  const outcomes = [10, 20, 30, 40]; // Random outcomes
-  return outcomes[Math.floor(Math.random() * outcomes.length)];
+  const outcomes = [20, 25, 30, 35]; // Will result in 75-90 INR total for 3 spins
+  const randomIndex = Math.floor(Math.random() * outcomes.length);
+  return outcomes[randomIndex];
 };
 
-const calculateTotalEarnings = (spins) =>
-  spins.reduce((sum, spin) => sum + spin, 0);
+const checkWithdrawEligibility = (totalEarnings) => {
+  return totalEarnings >= 100;
+};
 
-module.exports = { spinWheel, calculateTotalEarnings };
+module.exports = { spinWheel, checkWithdrawEligibility };

@@ -2,6 +2,7 @@ const { Telegraf, Markup } = require("telegraf");
 const connectDB = require("./utils/database");
 const { startBot, joinChannelUI, verifyJoin } = require("./controllers/user");
 const { spinGame } = require("./controllers/game");
+const { handleWithdrawal } = require("./controllers/withdrawal");
 
 require("dotenv").config();
 
@@ -12,5 +13,6 @@ bot.start(startBot);
 bot.action("START_PLAYING", joinChannelUI);
 bot.action("VERIFY_JOIN", verifyJoin);
 bot.action("SPIN_WHEEL", spinGame);
+bot.action("WITHDRAW", handleWithdrawal);
 
 module.exports = bot;
